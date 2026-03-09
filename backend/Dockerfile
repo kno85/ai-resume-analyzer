@@ -19,4 +19,5 @@ EXPOSE 8080
 # Forzamos a que el sistema busque módulos en el directorio actual (.)
 ENV PYTHONPATH=/app
 
-CMD ["sh", "-c", "uvicorn ping:app --host 0.0.0.0 --port ${PORT:-8080}"]
+# Antes decía ping:app, ahora debe decir main:app
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}"]
