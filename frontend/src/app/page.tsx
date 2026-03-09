@@ -27,7 +27,7 @@ export default function Home() {
     formData.append("file", file);
 
     try {
-      const response = await fetch("https://ai-resume-analyzer.onrender.com", {
+      const response = await fetch("https://ai-resume-analyzer-96ym.onrender.com/analyze", {
         method: "POST",
         body: formData,
       });
