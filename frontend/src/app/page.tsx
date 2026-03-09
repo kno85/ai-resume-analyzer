@@ -27,7 +27,7 @@ export default function Home() {
     formData.append("file", file);
 
     try {
-      const response = await fetch("http://127.0.0.1:8080/analyze", {
+      const response = await fetch("https://ai-resume-analyzer.onrender.com", {
         method: "POST",
         body: formData,
       });
