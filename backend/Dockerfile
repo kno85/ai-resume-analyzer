@@ -1,18 +1,22 @@
 FROM python:3.11-slim
 
+# Establecemos el directorio de trabajo
 WORKDIR /app
 
-# 1. Copiamos el requirements que ahora está en la raíz
+# Copiamos el requirements desde la raíz (según tu estructura actual)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 2. Copiamos TODO el contenido de la carpeta backend al directorio actual (/app)
-# Nota: El punto al final indica "aquí"
+# COPIAMOS TODO EL CONTENIDO DE BACKEND AQUÍ
+# Usamos el path relativo al repositorio
 COPY backend/ .
 
-# 3. Exponemos el puerto
+# LISTAR ARCHIVOS (Esto es para que veas en el log si ping.py está ahí)
+RUN ls -la
+
 EXPOSE 8080
 
-# 4. Comando de arranque
-# Al copiar "backend/ ." arriba, el archivo ping.py ahora está en la raíz de /app
+# Forzamos a que el sistema busque módulos en el directorio actual (.)
+ENV PYTHONPATH=/app
+
 CMD ["sh", "-c", "uvicorn ping:app --host 0.0.0.0 --port ${PORT:-8080}"]
