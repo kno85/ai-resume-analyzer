@@ -1,9 +1,13 @@
-# Usamos una imagen de Python oficial estable
 FROM python:3.11-slim
 
-# Evita que Python genere archivos .pyc y permite ver logs en tiempo real
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+WORKDIR /app
+
+# Al estar en el Root Directory 'backend', Docker busca el archivo en la misma carpeta
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+# ... resto del archivo
 
 # Directorio de trabajo dentro del contenedor
 WORKDIR /app
