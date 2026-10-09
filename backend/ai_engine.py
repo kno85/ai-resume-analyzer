@@ -9,16 +9,17 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Configuración del modelo
-# Usamos 'llama-3.1-8b-instant' porque es mucho más rápido y tiene límites de uso (RPM) más altos
+# Soporta configurar GROQ_MODEL por variable de entorno, usando 'llama-3.3-70b-versatile' por defecto
+model_name = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 llm = ChatGroq(
-    model="llama-3.1-8b-instant", 
+    model=model_name, 
     temperature=0.1, # Un poco de creatividad pero manteniendo precisión
     groq_api_key=os.getenv("GROQ_API_KEY")
 )
 
 def get_resume_analysis(resume_text: str):
     """
-    Envía el texto del CV a Groq y devuelve un análisis detallado en formato JSON.
+    Envía el texto del CV a Groq y devuelve una tupla (contenido, error).
     Incluye lógica de reintentos para evitar errores de Rate Limit (429).
     """
     
@@ -46,6 +47,7 @@ def get_resume_analysis(resume_text: str):
     chain = prompt | llm
     
     max_retries = 3
+    last_error = None
     for attempt in range(max_retries):
         try:
             # Invocamos a la IA
@@ -53,12 +55,14 @@ def get_resume_analysis(resume_text: str):
             
             # Verificamos si la respuesta tiene contenido
             if response and response.content:
-                return response.content
+                return response.content, None
             else:
-                print(f"⚠️ Intento {attempt + 1}: Respuesta vacía de Groq.")
+                last_error = f"Respuesta vacía de Groq (intento {attempt + 1})."
+                print(f"⚠️ {last_error}")
                 
         except Exception as e:
             error_str = str(e)
+            last_error = error_str
             # Si es un error de Rate Limit (429), esperamos y reintentamos
             if "429" in error_str:
                 wait_time = (attempt + 1) * 2
@@ -66,7 +70,6 @@ def get_resume_analysis(resume_text: str):
                 time.sleep(wait_time)
             else:
                 print(f"❌ Error en la llamada a Groq: {error_str}")
-                # Si es otro tipo de error, no vale la pena reintentar inmediatamente
                 break
                 
-    return None
+    return None, last_error

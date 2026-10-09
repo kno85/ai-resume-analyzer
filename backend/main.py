@@ -38,12 +38,12 @@ async def analyze_resume(file: UploadFile = File(...)):
 
         # 2. Llamada a la IA
         print("🤖 Consultando a Groq...")
-        analysis_raw = get_resume_analysis(text)
+        analysis_raw, error_msg = get_resume_analysis(text)
         
         # --- VALIDACIÓN ANTIFALLOS ---
         if analysis_raw is None:
-            print("❌ La función get_resume_analysis devolvió None")
-            return {"success": False, "error": "La IA no respondió. Revisa tu API Key y conexión a Groq."}
+            print(f"❌ La función get_resume_analysis devolvió None: {error_msg}")
+            return {"success": False, "error": f"Error de Groq: {error_msg or 'Sin respuesta'}"}
 
         print(f"📄 Respuesta cruda de la IA: {analysis_raw[:100]}...") # Log parcial para debug
 
