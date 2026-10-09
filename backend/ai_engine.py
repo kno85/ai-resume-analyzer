@@ -1,7 +1,7 @@
 import os
 import time
 import json
-import urllib.request
+from groq import Groq
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 from dotenv import load_dotenv
@@ -11,20 +11,16 @@ load_dotenv()
 
 def get_available_groq_models(api_key: str):
     """
-    Consulta la API oficial de Groq para obtener los modelos accesibles por esta API Key.
+    Consulta la API oficial de Groq usando el cliente nativo para evitar bloqueos de Cloudflare.
     """
     if not api_key:
         return []
     try:
-        req = urllib.request.Request(
-            "https://api.groq.com/openai/v1/models",
-            headers={"Authorization": f"Bearer {api_key}"}
-        )
-        with urllib.request.urlopen(req, timeout=4) as resp:
-            data = json.loads(resp.read().decode())
-            return [m["id"] for m in data.get("data", [])]
+        client = Groq(api_key=api_key)
+        models_data = client.models.list().data
+        return [m.id for m in models_data]
     except Exception as e:
-        print(f"⚠️ No se pudo listar modelos desde Groq API: {e}")
+        print(f"⚠️ No se pudo listar modelos desde Groq SDK: {e}")
         return []
 
 def get_candidate_models(api_key: str):
@@ -40,6 +36,7 @@ def get_candidate_models(api_key: str):
         
     # 2. Modelos reales disponibles consultados en la API de Groq
     available = get_available_groq_models(api_key)
+    print(f"🔎 Modelos disponibles en tu cuenta de Groq: {available}")
     
     # Priorizamos modelos de generación de texto conocidos
     priority_models = [
@@ -53,12 +50,12 @@ def get_candidate_models(api_key: str):
         if p in available and p not in candidates:
             candidates.append(p)
             
-    # Añadimos cualquier otro modelo de chat que no sea de audio o filtro
+    # Añadimos cualquier otro modelo de texto que no sea de audio ni moderación
     for m in available:
         if not m.startswith("whisper") and "guard" not in m and m not in candidates:
             candidates.append(m)
             
-    # Fallbacks generales si la API de modelos no respondió
+    # Fallbacks generales si la lista vino vacía
     defaults = ["openai/gpt-oss-20b", "openai/gpt-oss-120b", "qwen/qwen3.8-27b"]
     for d in defaults:
         if d not in candidates:
@@ -73,7 +70,7 @@ def get_resume_analysis(resume_text: str):
     """
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
-        return None, "GROQ_API_KEY no está configurada en el servidor."
+        return None, "GROQ_API_KEY no está configurada en el servidor de Render."
 
     # Definimos el Prompt con Ingeniería de Roles (Fase 1)
     prompt = ChatPromptTemplate.from_messages([
