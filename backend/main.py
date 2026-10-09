@@ -1,6 +1,8 @@
 import uvicorn
 import io
+import os
 import json
+import urllib.request
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pypdf import PdfReader
@@ -20,6 +22,23 @@ app.add_middleware(
 @app.get("/")
 def health_check():
     return {"status": "Backend funcionando en el puerto 8080"}
+
+@app.get("/models")
+def list_available_models():
+    api_key = os.getenv("GROQ_API_KEY")
+    if not api_key:
+        return {"success": False, "error": "GROQ_API_KEY no configurada"}
+    try:
+        req = urllib.request.Request(
+            "https://api.groq.com/openai/v1/models",
+            headers={"Authorization": f"Bearer {api_key}"}
+        )
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read().decode())
+            model_ids = [m["id"] for m in data.get("data", [])]
+            return {"success": True, "count": len(model_ids), "models": model_ids}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
 @app.post("/analyze")
 async def analyze_resume(file: UploadFile = File(...)):
